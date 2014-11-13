@@ -15,6 +15,7 @@ NSString *const PORT_IDENTIFIER = @"port";
 
 NSString *const OSX_TERMINAL_IDENTIFIER = @"Terminal";
 NSString *const ITERM_IDENTIFIER = @"iTerm";
+NSString *const BASIC_TABLE_VIEW_DRAG_AND_DROP_DATA_TYPE = @"BasicTableViewDragAndDropDataType";
 
 @interface AppDelegate ()
 
@@ -65,8 +66,9 @@ NSString *const ITERM_IDENTIFIER = @"iTerm";
 
 - (void)awakeFromNib
 {
-    NSString *MyCustomPBoardType = @"MyCustomBoardType";
-    NSArray *dragTypes = [NSArray arrayWithObjects: MyCustomPBoardType,nil];
+    NSString *MyCustomPBoardType = @"BasicTableViewDragAndDropDataType";
+    NSArray *dragTypes = [NSArray arrayWithObjects:MyCustomPBoardType ,nil];
+    
     [self.bookmarkTable registerForDraggedTypes:dragTypes];
     [self.bookmarkTable  setDraggingSourceOperationMask:NSDragOperationCopy forLocal:NO];
     
@@ -133,7 +135,7 @@ NSString *const ITERM_IDENTIFIER = @"iTerm";
     [self.bookmarkManager showWindow];
 }
 
-#pragma mark - NSTAbleViewDataSource Methods
+#pragma mark - NSTableViewDataSource Methods
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
@@ -171,6 +173,68 @@ NSString *const ITERM_IDENTIFIER = @"iTerm";
     }
     NSLog(@"setting row object");
     [self reloadBookmarks];
+}
+
+#pragma mark - Dragging and Reordering
+
+- (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id<NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
+{
+    NSLog(@"Row: %lu", row);
+    //NSArray *interestingTypes;
+    //interestingTypes = [NSArray arrayWithObjects:[MMSSHBookmark class], nil];
+
+
+    //NSArray * pboardContents = [tempPasteBoard readObjectsForClasses:interestingTypes options:nil];
+    
+    
+    NSPasteboard *tempPasteBoard = [info draggingPasteboard];
+    NSData *pasteBoardData = [tempPasteBoard dataForType:BASIC_TABLE_VIEW_DRAG_AND_DROP_DATA_TYPE];
+    NSIndexSet *tempIndexSet = [NSKeyedUnarchiver unarchiveObjectWithData:pasteBoardData];
+    
+    NSLog(@"tempbookmark: %@", tempIndexSet);
+    
+    NSUInteger draggedRow = tempIndexSet.firstIndex;
+    
+    
+    //self.bookmarkManager.bookmarks
+    if( operation == NSTableViewDropAbove ) {
+        MMSSHBookmark *tempBookmark = [self.bookmarkData objectAtIndex:draggedRow];
+        [self.bookmarkData removeObject:tempBookmark];
+        
+        if(row<draggedRow) {
+            [self.bookmarkData insertObject:tempBookmark atIndex:row];
+        } else {
+            [self.bookmarkData insertObject:tempBookmark atIndex:row-1];
+        }
+        [self.bookmarkTable reloadData];
+        return YES;
+    } else if ( operation == NSTableViewDropOn ) { //switch the two rows, row:theCurrentRow, draggedRow:theRowBeingDragged
+        
+        MMSSHBookmark *tempBookmark = [self.bookmarkData objectAtIndex:row];
+        [self.bookmarkData replaceObjectAtIndex:row withObject:[self.bookmarkData objectAtIndex:draggedRow]];
+        [self.bookmarkData replaceObjectAtIndex:draggedRow withObject:tempBookmark];
+        
+        [self.bookmarkTable reloadData];
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
+{
+    NSLog(@"%@", rowIndexes);
+    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:rowIndexes];
+    NSLog(@"%@", data);
+    [pboard declareTypes:[NSArray arrayWithObject:BASIC_TABLE_VIEW_DRAG_AND_DROP_DATA_TYPE] owner:self];
+    [pboard setData:data forType:BASIC_TABLE_VIEW_DRAG_AND_DROP_DATA_TYPE];
+    return YES;
+}
+
+- (NSDragOperation)tableView:(NSTableView *)aTableView validateDrop:(id<NSDraggingInfo>)info proposedRow:(NSInteger)row proposedDropOperation:(NSTableViewDropOperation)operation
+{
+    NSLog(@"Validate drop.");
+    return NSDragOperationMove;
 }
 
 #pragma mark - Bookmark Window Commands

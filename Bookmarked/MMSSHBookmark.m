@@ -64,4 +64,8 @@
     [aCoder encodeObject:self.host forKey:@"host"];
     [aCoder encodeObject:self.port forKey:@"port"];
 }
+
+#pragma mark NSPasteBoardReading implementation
+
+
 @end

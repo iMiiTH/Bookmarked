@@ -7,8 +7,9 @@
 //
 
 #import <Foundation/Foundation.h>
+@import AppKit;
 
-@interface MMSSHBookmark : NSObject <NSCoding>
+@interface MMSSHBookmark : NSObject <NSCoding, NSPasteboardReading>
 
 @property (nonatomic) NSString *menuTitle;
 @property (nonatomic) NSString *username;
