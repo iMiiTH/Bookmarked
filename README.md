@@ -1,4 +1,4 @@
 Bookmarked
 ==========
 
-A side project, just a little menubar application to bookmark ssh accounts for easy login. 
+Just a little menubar application that stores ssh logins, and with a little bit of applescript, opens up iTerm or Terminal and logs you in. 
